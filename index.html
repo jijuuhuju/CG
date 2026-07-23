@@ -15,7 +15,7 @@
         .btn.active { background: #0070f3; border-color: #0070f3; color: #fff; }
 
         /* ディスプレイエリア */
-        .display-area { width: 100%; max-width: 400px; height: 200px; background: #1e1e1e; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; }
+        .display-area { width: 100%; max-width: 400px; height: 230px; background: #1e1e1e; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; }
         .loader { display: none; width: 100%; height: 100%; }
         .loader.active { display: flex; align-items: center; justify-content: center; }
 
@@ -45,43 +45,43 @@
         @keyframes typing { 0%, 100% { left: 0; } 50%, 80% { left: 100%; } }
 
         /* ----------------------------------
-           ★ 新設：6. 四角形バトル (Battle)
+           6. 四角形バトル (Battle) + ランダムテキスト
         ---------------------------------- */
-        .battle-bg { width: 100%; height: 100%; background: #0f172a; /* 深い青色の背景 */ display: flex; justify-content: center; align-items: center; position: relative; }
+        .battle-bg { width: 100%; height: 100%; background: #0f172a; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
         
+        /* バトルの上のテキスト表示エリア */
+        .battle-text { font-size: 15px; font-weight: bold; color: #e2e8f0; margin-bottom: 60px; height: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10; font-family: sans-serif; letter-spacing: 1px; }
+
         /* 半透明の共通四角スタイル */
-        .square { width: 40px; height: 40px; position: absolute; border-radius: 6px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 11px; }
+        .square { width: 40px; height: 40px; position: absolute; top: 110px; border-radius: 6px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 11px; }
         
         /* 青い四角（プレイヤー側） */
-        .square-blue { background: rgba(56, 189, 248, 0.6); /* 半透明のシアン */ border: 2px solid #38bdf8; box-shadow: 0 0 15px #38bdf8; color: #fff; animation: rush-left 1.6s infinite cubic-bezier(0.25, 1, 0.5, 1); }
+        .square-blue { background: rgba(56, 189, 248, 0.6); border: 2px solid #38bdf8; box-shadow: 0 0 15px #38bdf8; color: #fff; animation: rush-left 1.6s infinite cubic-bezier(0.25, 1, 0.5, 1); }
         
         /* 赤い四角（エネミー側） */
-        .square-red { background: rgba(244, 63, 94, 0.6); /* 半透明のローズ */ border: 2px solid #f43f5e; box-shadow: 0 0 15px #f43f5e; color: #fff; animation: rush-right 1.6s infinite cubic-bezier(0.25, 1, 0.5, 1); }
+        .square-red { background: rgba(244, 63, 94, 0.6); border: 2px solid #f43f5e; box-shadow: 0 0 15px #f43f5e; color: #fff; animation: rush-right 1.6s infinite cubic-bezier(0.25, 1, 0.5, 1); }
 
         /* ぶつかり合う衝撃エフェクト */
-        .clash-spark { width: 10px; height: 10px; background: #fff; border-radius: 50%; box-shadow: 0 0 30px 10px #fff; animation: spark-pop 1.6s infinite ease-out; position: absolute; }
+        .clash-spark { width: 10px; height: 10px; background: #fff; border-radius: 50%; box-shadow: 0 0 30px 10px #fff; animation: spark-pop 1.6s infinite ease-out; position: absolute; top: 125px; }
 
-        /* 左の四角の突撃アニメーション */
         @keyframes rush-left {
-            0% { transform: translateX(-150px) scale(1); }
+            0% { transform: translateX(-140px) scale(1); }
             45% { transform: translateX(-20px) scale(1); }
-            50% { transform: translateX(-5px) scale(1.2); } /* 衝突の瞬間 */
-            55% { transform: translateX(-30px) scale(0.9) rotate(-15deg); } /* 反動で弾かれる */
+            50% { transform: translateX(-5px) scale(1.2); }
+            55% { transform: translateX(-30px) scale(0.9) rotate(-15deg); }
             75% { transform: translateX(-30px) opacity(1); }
-            100% { transform: translateX(-150px) scale(1); }
+            100% { transform: translateX(-140px) scale(1); }
         }
 
-        /* 右の四角の突撃アニメーション */
         @keyframes rush-right {
-            0% { transform: translateX(150px) scale(1); }
+            0% { transform: translateX(140px) scale(1); }
             45% { transform: translateX(20px) scale(1); }
-            50% { transform: translateX(5px) scale(1.2); } /* 衝突の瞬間 */
-            55% { transform: translateX(30px) scale(0.9) rotate(15deg); } /* 反動で弾かれる */
+            50% { transform: translateX(5px) scale(1.2); }
+            55% { transform: translateX(30px) scale(0.9) rotate(15deg); }
             75% { transform: translateX(30px) opacity(1); }
-            100% { transform: translateX(150px) scale(1); }
+            100% { transform: translateX(140px) scale(1); }
         }
 
-        /* 衝突の瞬間に光る火花 */
         @keyframes spark-pop {
             0%, 48% { transform: scale(0); opacity: 0; }
             50% { transform: scale(1.5); opacity: 1; }
@@ -94,7 +94,6 @@
 
     <h1>⏳ LOADING SELECTOR</h1>
 
-    <!-- 選択肢ボタン（6つに増加） -->
     <div class="selector">
         <button class="btn active" onclick="switchLoader(1)">1. 回転リング</button>
         <button class="btn" onclick="switchLoader(2)">2. プログレスバー</button>
@@ -104,7 +103,6 @@
         <button class="btn" onclick="switchLoader(6)">⚔️ 6. 四角形バトル</button>
     </div>
 
-    <!-- 表示エリア -->
     <div class="display-area">
         <div class="loader active" id="loader-1"><div class="spinner"></div></div>
         <div class="loader" id="loader-2"><div class="bar-container"><div class="bar"></div></div></div>
@@ -112,17 +110,21 @@
         <div class="loader" id="loader-4"><div class="cube"></div></div>
         <div class="loader" id="loader-5"><div class="scan-text">LOADING...</div></div>
         
-        <!-- 新しいバトルアニメーション -->
+        <!-- バトルアニメーション（テキスト領域追加） -->
         <div class="loader" id="loader-6">
             <div class="battle-bg">
+                <!-- ここに文字が表示されます -->
+                <div class="battle-text" id="status-text">読み込み中...</div>
+                
                 <div class="square square-blue">1P</div>
                 <div class="square square-red">2P</div>
-                <div class="clash-spark"></div> <!-- ぶつかった時の光 -->
+                <div class="clash-spark"></div>
             </div>
         </div>
     </div>
 
     <script>
+        // ボタン切り替え用
         function switchLoader(index) {
             document.querySelectorAll('.loader').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.btn').forEach(el => el.classList.remove('active'));
@@ -130,6 +132,31 @@
             document.getElementById(`loader-${index}`).classList.add('active');
             document.querySelectorAll('.btn')[index - 1].classList.add('active');
         }
+
+        // --- ランダムテキスト切り替え処理 ---
+        const texts = [
+            "読み込み中...",
+            "サイトを準備中...",
+            "情報を反映させています...",
+            "サイトを表示中..."
+        ];
+
+        function changeTextRandomly() {
+            const textElement = document.getElementById('status-text');
+            
+            // 配列からランダムに1つ選ぶ
+            const randomIndex = Math.floor(Math.random() * texts.length);
+            textElement.innerText = texts[randomIndex];
+
+            // 0.3秒(300ms)から1.0秒(1000ms)の間でランダムな数値を計算
+            const randomDelay = Math.floor(Math.random() * (1000 - 300 + 1)) + 300;
+
+            // 次の切り替えタイマーをセット（再帰呼び出し）
+            setTimeout(changeTextRandomly, randomDelay);
+        }
+
+        // 最初のタイマーを起動
+        changeTextRandomly();
     </script>
 </body>
 </html>

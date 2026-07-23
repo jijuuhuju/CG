@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChromaKey CG Maker</title>
+    <style>
+        body { font-family: sans-serif; background: #222; color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { display: flex; gap: 20px; max-width: 1200px; width: 100%; }
+        .controls { flex: 1; background: #333; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; }
+        .view { flex: 1; display: flex; flex-direction: column; align-items: center; }
+        canvas { border: 2px solid #555; background: #00ff00; max-width: 100%; height: auto; }
+        label { display: flex; flex-direction: column; gap: 5px; font-size: 14px; }
+        input[type="range"] { width: 100%; }
+        button { padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        button.recording { background: #dc3545; }
+    </style>
+    <!-- 3D処理とMP4録画に必要なライブラリをCDNから読み込み -->
+    <script src="https://cloudflare.com"></script>
+</head>
+<body>
+
+    <h1>クロマキー用画像変形・MP4録画ツール</h1>
+    
+    <div class="container">
+        <!-- 操作パネル -->
+        <div class="controls">
+            <label>
+                ステップ1: 画像をアップロード
+                <input type="file" id="imageLoader" accept="image/*">
+            </label>
+            
+            <hr style="border-color: #444;">
+            
+            <label>
+                背景色（クロマキー用）
+                <input type="color" id="bgColor" value="#00ff00">
+            </label>
+
+            <label>
+                変形スピード (回転速度)
+                <input type="range" id="speed" min="0" max="0.1" step="0.005" value="0.02">
+            </label>
+
+            <label>
+                3D歪み（うねり効果）
+                <input type="range" id="wave" min="0" max="5" step="0.1" value="0">
+            </label>
+
+            <label>
+                カメラズーム (Z軸)
+                <input type="range" id="zoom" min="2" max="10" step="0.1" value="5">
+            </label>
+            
+            <hr style="border-color: #444;">
+
+            <button id="recordBtn">ステップ2: MP4で録画開始 (5秒間)</button>
+        </div>
+
+        <!-- プレビュー画面 -->
+        <div class="view">
+            <canvas id="cgCanvas"></canvas>
+            <p id="status" style="margin-top:10px; color:#aaa;"></p>
+        </div>
+    </div>
+
+    <script>
+        // 1. 各種要素の取得
+        const imageLoader = document.getElementById('imageLoader');
+        const bgColorInput = document.getElementById('bgColor');
+        const speedInput = document.getElementById('speed');
+        const waveInput = document.getElementById('wave');
+        const zoomInput = document.getElementById('zoom');
+        const recordBtn = document.getElementById('recordBtn');
+        const canvas = document.getElementById('cgCanvas');
+        const statusText = document.getElementById('status');
+
+        // 2. Three.js（3D）の基本設定
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(bgColorInput.value);
+
+        const camera = new THREE.PerspectiveCamera(75, 500 / 500, 0.1, 1000);
+        camera.position.z = zoomInput.value;
+
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, preserveDrawingBuffer: true });
+        renderer.setSize(500, 500);
+
+        // 変形用の平面メッシュ（ポリゴンを細かく分割）
+        const geometry = new THREE.PlaneGeometry(3, 3, 32, 32);
+        const material = new THREE.MeshBasicMaterial({ color: 0xcccccc, side: THREE.DoubleSide });
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        // 3. 画像の読み込み処理
+        imageLoader.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const textureLoader = new THREE.TextureLoader();
+                textureLoader.load(event.target.result, (texture) => {
+                    mesh.material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+                    
+                    // 画像の比率に合わせてサイズを調整
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const aspect = img.width / img.height;
+                        mesh.scale.set(aspect, 1, 1);
+                    }
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // 4. イベント連動（背景色・ズーム変更）
+        bgColorInput.addEventListener('input', (e) => scene.background.set(e.target.value));
+        zoomInput.addEventListener('input', (e) => camera.position.z = e.target.value);
+
+        // 5. アニメーションループ（変形処理）
+        let clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const elapsedTime = clock.getElapsedTime();
+
+            // 回転変形
+            mesh.rotation.y += parseFloat(speedInput.value);
+            mesh.rotation.x = Math.sin(elapsedTime) * 0.2;
+
+            // 3Dうねり（歪み）変形
+            const waveIntensity = parseFloat(waveInput.value);
+            if (waveIntensity > 0) {
+                const position = geometry.attributes.position;
+                for (let i = 0; i < position.count; i++) {
+                    const x = position.getX(i);
+                    const y = position.getY(i);
+                    // サイン波を使ってZ軸を歪ませる
+                    const z = Math.sin(x * 2 + elapsedTime * 5) * Math.cos(y * 2 + elapsedTime * 5) * (waveIntensity * 0.1);
+                    position.setZ(i, z);
+                }
+                geometry.attributes.position.needsUpdate = true;
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // 6. MP4（WebM形式含む）での録画・保存処理
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        recordBtn.addEventListener('click', () => {
+            recordedChunks = [];
+            
+            // Canvasから映像ストリームを取得 (30fps)
+            const stream = canvas.captureStream(30);
+            
+            // ブラウザが対応している保存形式（MP4/WebM）を選択
+            const options = { mimeType: 'video/webm;codecs=vp9' };
+            try {
+                mediaRecorder = new MediaRecorder(stream, options);
+            } catch (e) {
+                // Safariなどのためのフォールバック
+                mediaRecorder = new MediaRecorder(stream);
+            }
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) recordedChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                // 録画データのダウンロード処理
+                const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'chromakey-cg.mp4';
+                a.click();
+                
+                recordBtn.innerText = "ステップ2: MP4で録画開始 (5秒間)";
+                recordBtn.classList.remove('recording');
+                statusText.innerText = "ダウンロードが完了しました！";
+            };
+
+            // 録画開始
+            mediaRecorder.start();
+            recordBtn.innerText = "録画中...";
+            recordBtn.classList.add('recording');
+            statusText.innerText = "5秒間自動で録画してダウンロードします...";
+
+            // 5秒後に自動停止
+            setTimeout(() => {
+                mediaRecorder.stop();
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

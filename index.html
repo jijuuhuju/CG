@@ -5,102 +5,128 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loading Animation Selector</title>
     <style>
-        /* 全体のデザイン */
         body { background: #121212; color: #fff; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; box-sizing: border-box; }
         h1 { margin-bottom: 30px; font-size: 24px; color: #e0e0e0; }
 
-        /* セレクター（5つのボタン） */
+        /* セレクター（6つのボタン） */
         .selector { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 50px; }
         .btn { background: #222; border: 2px solid #444; color: #aaa; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: all 0.2s; }
         .btn:hover { border-color: #0070f3; color: #fff; }
         .btn.active { background: #0070f3; border-color: #0070f3; color: #fff; }
 
         /* ディスプレイエリア */
-        .display-area { width: 100%; max-width: 400px; height: 200px; background: #1e1e1e; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: center; align-items: center; position: relative; }
-        .loader { display: none; }
+        .display-area { width: 100%; max-width: 400px; height: 200px; background: #1e1e1e; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; }
+        .loader { display: none; width: 100%; height: 100%; }
         .loader.active { display: flex; align-items: center; justify-content: center; }
 
-        /* ----------------------------------
-           1. 回転リング (Spinner)
-        ---------------------------------- */
+        /* 1. 回転リング */
         .spinner { width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #0070f3; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* ----------------------------------
-           2. 進行バー (Progress Bar)
-        ---------------------------------- */
+        /* 2. 進行バー */
         .bar-container { width: 200px; height: 6px; background: #333; border-radius: 3px; overflow: hidden; }
         .bar { width: 100%; height: 100%; background: #0070f3; transform-origin: left; animation: load-bar 1.5s infinite ease-in-out; }
         @keyframes load-bar { 0% { transform: scaleX(0); } 50% { transform: scaleX(1); } 100% { transform: scaleX(1); opacity: 0; } }
 
-        /* ----------------------------------
-           3. 3連ドット (Dots)
-        ---------------------------------- */
+        /* 3. 3連ドット */
         .dots { display: flex; gap: 8px; }
         .dot { width: 12px; height: 12px; background: #0070f3; border-radius: 50%; animation: pulse 1.2s infinite ease-in-out both; }
         .dot:nth-child(1) { animation-delay: -0.32s; }
         .dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes pulse { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
 
-        /* ----------------------------------
-           4. バウンスキューブ (Bounce)
-        ---------------------------------- */
+        /* 4. バウンスキューブ */
         .cube { width: 40px; height: 40px; background: #0070f3; animation: bounce 1.2s infinite ease-in-out; border-radius: 4px; }
         @keyframes bounce { 0% { transform: perspective(120px) rotateX(0deg) rotateY(0deg); } 50% { transform: perspective(120px) rotateX(-180.1deg) rotateY(0deg); } 100% { transform: perspective(120px) rotateX(-180.1deg) rotateY(-179.9deg); } }
 
-        /* ----------------------------------
-           5. レトロスキャンライン (Scan)
-        ---------------------------------- */
+        /* 5. レトロスキャンライン */
         .scan-text { font-size: 18px; font-family: monospace; letter-spacing: 2px; color: #00ff66; position: relative; }
         .scan-text::after { content: ''; position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #1e1e1e; border-left: 2px solid #00ff66; animation: typing 2s steps(10) infinite; }
         @keyframes typing { 0%, 100% { left: 0; } 50%, 80% { left: 100%; } }
+
+        /* ----------------------------------
+           ★ 新設：6. 四角形バトル (Battle)
+        ---------------------------------- */
+        .battle-bg { width: 100%; height: 100%; background: #0f172a; /* 深い青色の背景 */ display: flex; justify-content: center; align-items: center; position: relative; }
+        
+        /* 半透明の共通四角スタイル */
+        .square { width: 40px; height: 40px; position: absolute; border-radius: 6px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 11px; }
+        
+        /* 青い四角（プレイヤー側） */
+        .square-blue { background: rgba(56, 189, 248, 0.6); /* 半透明のシアン */ border: 2px solid #38bdf8; box-shadow: 0 0 15px #38bdf8; color: #fff; animation: rush-left 1.6s infinite cubic-bezier(0.25, 1, 0.5, 1); }
+        
+        /* 赤い四角（エネミー側） */
+        .square-red { background: rgba(244, 63, 94, 0.6); /* 半透明のローズ */ border: 2px solid #f43f5e; box-shadow: 0 0 15px #f43f5e; color: #fff; animation: rush-right 1.6s infinite cubic-bezier(0.25, 1, 0.5, 1); }
+
+        /* ぶつかり合う衝撃エフェクト */
+        .clash-spark { width: 10px; height: 10px; background: #fff; border-radius: 50%; box-shadow: 0 0 30px 10px #fff; animation: spark-pop 1.6s infinite ease-out; position: absolute; }
+
+        /* 左の四角の突撃アニメーション */
+        @keyframes rush-left {
+            0% { transform: translateX(-150px) scale(1); }
+            45% { transform: translateX(-20px) scale(1); }
+            50% { transform: translateX(-5px) scale(1.2); } /* 衝突の瞬間 */
+            55% { transform: translateX(-30px) scale(0.9) rotate(-15deg); } /* 反動で弾かれる */
+            75% { transform: translateX(-30px) opacity(1); }
+            100% { transform: translateX(-150px) scale(1); }
+        }
+
+        /* 右の四角の突撃アニメーション */
+        @keyframes rush-right {
+            0% { transform: translateX(150px) scale(1); }
+            45% { transform: translateX(20px) scale(1); }
+            50% { transform: translateX(5px) scale(1.2); } /* 衝突の瞬間 */
+            55% { transform: translateX(30px) scale(0.9) rotate(15deg); } /* 反動で弾かれる */
+            75% { transform: translateX(30px) opacity(1); }
+            100% { transform: translateX(150px) scale(1); }
+        }
+
+        /* 衝突の瞬間に光る火花 */
+        @keyframes spark-pop {
+            0%, 48% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.5); opacity: 1; }
+            55% { transform: scale(2.5); opacity: 0.5; }
+            60%, 100% { transform: scale(0); opacity: 0; }
+        }
     </style>
 </head>
 <body>
 
     <h1>⏳ LOADING SELECTOR</h1>
 
-    <!-- 5つの選択肢ボタン -->
+    <!-- 選択肢ボタン（6つに増加） -->
     <div class="selector">
         <button class="btn active" onclick="switchLoader(1)">1. 回転リング</button>
         <button class="btn" onclick="switchLoader(2)">2. プログレスバー</button>
         <button class="btn" onclick="switchLoader(3)">3. 3連ドット</button>
         <button class="btn" onclick="switchLoader(4)">4. バウンス</button>
         <button class="btn" onclick="switchLoader(5)">5. レトロスキャン</button>
+        <button class="btn" onclick="switchLoader(6)">⚔️ 6. 四角形バトル</button>
     </div>
 
     <!-- 表示エリア -->
     <div class="display-area">
-        <!-- 1. 回転リング -->
-        <div class="loader active" id="loader-1">
-            <div class="spinner"></div>
-        </div>
-        <!-- 2. プログレスバー -->
-        <div class="loader" id="loader-2">
-            <div class="bar-container"><div class="bar"></div></div>
-        </div>
-        <!-- 3. 3連ドット -->
-        <div class="loader" id="loader-3">
-            <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-        </div>
-        <!-- 4. バウンス -->
-        <div class="loader" id="loader-4">
-            <div class="cube"></div>
-        </div>
-        <!-- 5. レトロスキャン -->
-        <div class="loader" id="loader-5">
-            <div class="scan-text">LOADING...</div>
+        <div class="loader active" id="loader-1"><div class="spinner"></div></div>
+        <div class="loader" id="loader-2"><div class="bar-container"><div class="bar"></div></div></div>
+        <div class="loader" id="loader-3"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+        <div class="loader" id="loader-4"><div class="cube"></div></div>
+        <div class="loader" id="loader-5"><div class="scan-text">LOADING...</div></div>
+        
+        <!-- 新しいバトルアニメーション -->
+        <div class="loader" id="loader-6">
+            <div class="battle-bg">
+                <div class="square square-blue">1P</div>
+                <div class="square square-red">2P</div>
+                <div class="clash-spark"></div> <!-- ぶつかった時の光 -->
+            </div>
         </div>
     </div>
 
     <script>
-        // ボタン切り替えのJavaScript
         function switchLoader(index) {
-            // すべてのローダーとボタンから active クラスを消す
             document.querySelectorAll('.loader').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.btn').forEach(el => el.classList.remove('active'));
             
-            // 選択されたものだけに active クラスをつける
             document.getElementById(`loader-${index}`).classList.add('active');
             document.querySelectorAll('.btn')[index - 1].classList.add('active');
         }

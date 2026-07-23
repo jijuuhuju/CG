@@ -3,199 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChromaKey CG Maker</title>
+    <title>Loading Animation Selector</title>
     <style>
-        body { font-family: sans-serif; background: #222; color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { display: flex; gap: 20px; max-width: 1200px; width: 100%; }
-        .controls { flex: 1; background: #333; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; }
-        .view { flex: 1; display: flex; flex-direction: column; align-items: center; }
-        canvas { border: 2px solid #555; background: #00ff00; max-width: 100%; height: auto; }
-        label { display: flex; flex-direction: column; gap: 5px; font-size: 14px; }
-        input[type="range"] { width: 100%; }
-        button { padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #0056b3; }
-        button.recording { background: #dc3545; }
+        /* 全体のデザイン */
+        body { background: #121212; color: #fff; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; box-sizing: border-box; }
+        h1 { margin-bottom: 30px; font-size: 24px; color: #e0e0e0; }
+
+        /* セレクター（5つのボタン） */
+        .selector { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 50px; }
+        .btn { background: #222; border: 2px solid #444; color: #aaa; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: all 0.2s; }
+        .btn:hover { border-color: #0070f3; color: #fff; }
+        .btn.active { background: #0070f3; border-color: #0070f3; color: #fff; }
+
+        /* ディスプレイエリア */
+        .display-area { width: 100%; max-width: 400px; height: 200px; background: #1e1e1e; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: center; align-items: center; position: relative; }
+        .loader { display: none; }
+        .loader.active { display: flex; align-items: center; justify-content: center; }
+
+        /* ----------------------------------
+           1. 回転リング (Spinner)
+        ---------------------------------- */
+        .spinner { width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #0070f3; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* ----------------------------------
+           2. 進行バー (Progress Bar)
+        ---------------------------------- */
+        .bar-container { width: 200px; height: 6px; background: #333; border-radius: 3px; overflow: hidden; }
+        .bar { width: 100%; height: 100%; background: #0070f3; transform-origin: left; animation: load-bar 1.5s infinite ease-in-out; }
+        @keyframes load-bar { 0% { transform: scaleX(0); } 50% { transform: scaleX(1); } 100% { transform: scaleX(1); opacity: 0; } }
+
+        /* ----------------------------------
+           3. 3連ドット (Dots)
+        ---------------------------------- */
+        .dots { display: flex; gap: 8px; }
+        .dot { width: 12px; height: 12px; background: #0070f3; border-radius: 50%; animation: pulse 1.2s infinite ease-in-out both; }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes pulse { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+
+        /* ----------------------------------
+           4. バウンスキューブ (Bounce)
+        ---------------------------------- */
+        .cube { width: 40px; height: 40px; background: #0070f3; animation: bounce 1.2s infinite ease-in-out; border-radius: 4px; }
+        @keyframes bounce { 0% { transform: perspective(120px) rotateX(0deg) rotateY(0deg); } 50% { transform: perspective(120px) rotateX(-180.1deg) rotateY(0deg); } 100% { transform: perspective(120px) rotateX(-180.1deg) rotateY(-179.9deg); } }
+
+        /* ----------------------------------
+           5. レトロスキャンライン (Scan)
+        ---------------------------------- */
+        .scan-text { font-size: 18px; font-family: monospace; letter-spacing: 2px; color: #00ff66; position: relative; }
+        .scan-text::after { content: ''; position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #1e1e1e; border-left: 2px solid #00ff66; animation: typing 2s steps(10) infinite; }
+        @keyframes typing { 0%, 100% { left: 0; } 50%, 80% { left: 100%; } }
     </style>
-    <!-- 3D処理とMP4録画に必要なライブラリをCDNから読み込み -->
-    <script src="https://cloudflare.com"></script>
 </head>
 <body>
 
-    <h1>クロマキー用画像変形・MP4録画ツール</h1>
-    
-    <div class="container">
-        <!-- 操作パネル -->
-        <div class="controls">
-            <label>
-                ステップ1: 画像をアップロード
-                <input type="file" id="imageLoader" accept="image/*">
-            </label>
-            
-            <hr style="border-color: #444;">
-            
-            <label>
-                背景色（クロマキー用）
-                <input type="color" id="bgColor" value="#00ff00">
-            </label>
+    <h1>⏳ LOADING SELECTOR</h1>
 
-            <label>
-                変形スピード (回転速度)
-                <input type="range" id="speed" min="0" max="0.1" step="0.005" value="0.02">
-            </label>
+    <!-- 5つの選択肢ボタン -->
+    <div class="selector">
+        <button class="btn active" onclick="switchLoader(1)">1. 回転リング</button>
+        <button class="btn" onclick="switchLoader(2)">2. プログレスバー</button>
+        <button class="btn" onclick="switchLoader(3)">3. 3連ドット</button>
+        <button class="btn" onclick="switchLoader(4)">4. バウンス</button>
+        <button class="btn" onclick="switchLoader(5)">5. レトロスキャン</button>
+    </div>
 
-            <label>
-                3D歪み（うねり効果）
-                <input type="range" id="wave" min="0" max="5" step="0.1" value="0">
-            </label>
-
-            <label>
-                カメラズーム (Z軸)
-                <input type="range" id="zoom" min="2" max="10" step="0.1" value="5">
-            </label>
-            
-            <hr style="border-color: #444;">
-
-            <button id="recordBtn">ステップ2: MP4で録画開始 (5秒間)</button>
+    <!-- 表示エリア -->
+    <div class="display-area">
+        <!-- 1. 回転リング -->
+        <div class="loader active" id="loader-1">
+            <div class="spinner"></div>
         </div>
-
-        <!-- プレビュー画面 -->
-        <div class="view">
-            <canvas id="cgCanvas"></canvas>
-            <p id="status" style="margin-top:10px; color:#aaa;"></p>
+        <!-- 2. プログレスバー -->
+        <div class="loader" id="loader-2">
+            <div class="bar-container"><div class="bar"></div></div>
+        </div>
+        <!-- 3. 3連ドット -->
+        <div class="loader" id="loader-3">
+            <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+        <!-- 4. バウンス -->
+        <div class="loader" id="loader-4">
+            <div class="cube"></div>
+        </div>
+        <!-- 5. レトロスキャン -->
+        <div class="loader" id="loader-5">
+            <div class="scan-text">LOADING...</div>
         </div>
     </div>
 
     <script>
-        // 1. 各種要素の取得
-        const imageLoader = document.getElementById('imageLoader');
-        const bgColorInput = document.getElementById('bgColor');
-        const speedInput = document.getElementById('speed');
-        const waveInput = document.getElementById('wave');
-        const zoomInput = document.getElementById('zoom');
-        const recordBtn = document.getElementById('recordBtn');
-        const canvas = document.getElementById('cgCanvas');
-        const statusText = document.getElementById('status');
-
-        // 2. Three.js（3D）の基本設定
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(bgColorInput.value);
-
-        const camera = new THREE.PerspectiveCamera(75, 500 / 500, 0.1, 1000);
-        camera.position.z = zoomInput.value;
-
-        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, preserveDrawingBuffer: true });
-        renderer.setSize(500, 500);
-
-        // 変形用の平面メッシュ（ポリゴンを細かく分割）
-        const geometry = new THREE.PlaneGeometry(3, 3, 32, 32);
-        const material = new THREE.MeshBasicMaterial({ color: 0xcccccc, side: THREE.DoubleSide });
-        const mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-
-        // 3. 画像の読み込み処理
-        imageLoader.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const textureLoader = new THREE.TextureLoader();
-                textureLoader.load(event.target.result, (texture) => {
-                    mesh.material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
-                    
-                    // 画像の比率に合わせてサイズを調整
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        const aspect = img.width / img.height;
-                        mesh.scale.set(aspect, 1, 1);
-                    }
-                });
-            };
-            reader.readAsDataURL(file);
-        });
-
-        // 4. イベント連動（背景色・ズーム変更）
-        bgColorInput.addEventListener('input', (e) => scene.background.set(e.target.value));
-        zoomInput.addEventListener('input', (e) => camera.position.z = e.target.value);
-
-        // 5. アニメーションループ（変形処理）
-        let clock = new THREE.Clock();
-        function animate() {
-            requestAnimationFrame(animate);
-
-            const elapsedTime = clock.getElapsedTime();
-
-            // 回転変形
-            mesh.rotation.y += parseFloat(speedInput.value);
-            mesh.rotation.x = Math.sin(elapsedTime) * 0.2;
-
-            // 3Dうねり（歪み）変形
-            const waveIntensity = parseFloat(waveInput.value);
-            if (waveIntensity > 0) {
-                const position = geometry.attributes.position;
-                for (let i = 0; i < position.count; i++) {
-                    const x = position.getX(i);
-                    const y = position.getY(i);
-                    // サイン波を使ってZ軸を歪ませる
-                    const z = Math.sin(x * 2 + elapsedTime * 5) * Math.cos(y * 2 + elapsedTime * 5) * (waveIntensity * 0.1);
-                    position.setZ(i, z);
-                }
-                geometry.attributes.position.needsUpdate = true;
-            }
-
-            renderer.render(scene, camera);
+        // ボタン切り替えのJavaScript
+        function switchLoader(index) {
+            // すべてのローダーとボタンから active クラスを消す
+            document.querySelectorAll('.loader').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.btn').forEach(el => el.classList.remove('active'));
+            
+            // 選択されたものだけに active クラスをつける
+            document.getElementById(`loader-${index}`).classList.add('active');
+            document.querySelectorAll('.btn')[index - 1].classList.add('active');
         }
-        animate();
-
-        // 6. MP4（WebM形式含む）での録画・保存処理
-        let mediaRecorder;
-        let recordedChunks = [];
-
-        recordBtn.addEventListener('click', () => {
-            recordedChunks = [];
-            
-            // Canvasから映像ストリームを取得 (30fps)
-            const stream = canvas.captureStream(30);
-            
-            // ブラウザが対応している保存形式（MP4/WebM）を選択
-            const options = { mimeType: 'video/webm;codecs=vp9' };
-            try {
-                mediaRecorder = new MediaRecorder(stream, options);
-            } catch (e) {
-                // Safariなどのためのフォールバック
-                mediaRecorder = new MediaRecorder(stream);
-            }
-
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) recordedChunks.push(e.data);
-            };
-
-            mediaRecorder.onstop = () => {
-                // 録画データのダウンロード処理
-                const blob = new Blob(recordedChunks, { type: 'video/mp4' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'chromakey-cg.mp4';
-                a.click();
-                
-                recordBtn.innerText = "ステップ2: MP4で録画開始 (5秒間)";
-                recordBtn.classList.remove('recording');
-                statusText.innerText = "ダウンロードが完了しました！";
-            };
-
-            // 録画開始
-            mediaRecorder.start();
-            recordBtn.innerText = "録画中...";
-            recordBtn.classList.add('recording');
-            statusText.innerText = "5秒間自動で録画してダウンロードします...";
-
-            // 5秒後に自動停止
-            setTimeout(() => {
-                mediaRecorder.stop();
-            }, 5000);
-        });
     </script>
 </body>
 </html>
